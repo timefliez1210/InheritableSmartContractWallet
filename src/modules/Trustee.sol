@@ -24,4 +24,12 @@ abstract contract Trustee {
     function setAssetToPay(address _asset) external onlyTrustee {
         assetToPay = _asset;
     }
+
+    function getNftValue(uint256 _id) public view returns (uint256) {
+        return nftValue[_id];
+    }
+
+    function getAssetToPay() public view returns (address) {
+        return assetToPay;
+    }
 }

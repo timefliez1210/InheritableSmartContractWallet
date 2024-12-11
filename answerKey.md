@@ -4,7 +4,7 @@
 
 [High] No address(0) check is performed on the withdrawInheritedFunds which in this case would be critical since we do not really remove entries out of the array with remove(index) (connected to Medium 1, depending on recommended fix, this could be 2 tags)
 
-[High] A malicious beneficiary could reenter the withdrawInheritedFnds function
+[High] A malicious beneficiary could reenter the withdrawInheritedFunds function
 
 [High] There is no way to unwind DeFi positions from contractInteractions() the original owner might have done in case there is more than one beneficiary (inheritance scenario)
 
@@ -17,3 +17,5 @@
 [Medium] The contract lacks functionality to actually receive ether
 
 [Low] assetToPay is assigned globally, it is possible to change the estateValue or assetToPay without the other and on top of that could cause inconsistencies: e.g. the owner minted a house and a car, the house would be set on a value of 2m USD and afterwards the car 5 ETH, the house would need to be bought for 2m ETH.
+
+[Low] Uses BaseURI to describe the NFT instead of Metadata.

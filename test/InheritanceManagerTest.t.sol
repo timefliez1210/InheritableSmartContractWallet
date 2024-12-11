@@ -90,10 +90,6 @@ contract InheritanceManagerTest is Test {
         vm.stopPrank();
     }
 
-    function test_createEstateNFT() public {
-        //
-    }
-
     function test_addBeneficiarySuccess() public {
         vm.startPrank(owner);
         im.addBeneficiery(user1);
@@ -276,6 +272,19 @@ contract InheritanceManagerTest is Test {
     }
 
     function test_appointTrusteeSuccess() public {
-
+        address user2 = makeAddr("user2");
+        address user3 = makeAddr("user3");
+        vm.startPrank(owner);
+        im.addBeneficiery(user1);
+        im.addBeneficiery(user2);
+        vm.stopPrank();
+        vm.warp(1);
+        vm.deal(address(im), 9e18);
+        vm.warp(1 + 90 days);
+        vm.startPrank(user1);
+        im.inherit();
+        im.appointTrustee(user3);
+        vm.stopPrank();
+        assertEq(user3, im.getTrustee());
     }
 }

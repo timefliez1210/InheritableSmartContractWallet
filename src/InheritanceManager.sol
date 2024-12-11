@@ -10,24 +10,34 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 contract InheritanceManager is Trustee {
     using SafeERC20 for IERC20;
 
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////// Errors /////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
     error NotOwner(address);
     error InsufficientBalance();
     error InactivityPeriodNotLongEnough();
     error InvalidBeneficiaries();
     error NotYetInherited();
 
-    uint256 public constant TIMELOCK = 90 days;
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////////////////// State Variables & Constants ////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
     NFTFactory nft;
     address owner;
     address[] beneficiaries;
-    mapping(address protocol => bytes) interactions;
-    bool isInherited = false;
     uint256 deadline;
+    bool isInherited = false;
+    mapping(address protocol => bytes) interactions;
+    uint256 public constant TIMELOCK = 90 days;
 
     constructor() {
         owner = msg.sender;
         nft = new NFTFactory(address(this));
     }
+
+    //////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////// Modifiers ////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
 
     modifier onlyOwner() {
         if (msg.sender != owner) {
@@ -124,7 +134,7 @@ contract InheritanceManager is Trustee {
     //////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * @dev creates an NFT of an underlaying asset, for example real estate. Mints the nft and adds it 
+     * @dev creates an NFT of an underlaying asset, for example real estate. Mints the nft and adds it
      * into nftValue mapping, connecting it to a real world price.
      * @param _description describes the asset, for example address or title number
      * @param _value uint256 describing the value of an asset, we recommend using a stablecoin like USDC or DAI
@@ -184,14 +194,17 @@ contract InheritanceManager is Trustee {
         return deadline;
     }
 
-    function getOwner() public view returns(address) {
+    function getOwner() public view returns (address) {
         return owner;
     }
 
-    function getIsInherited() public view returns(bool) {
+    function getIsInherited() public view returns (bool) {
         return isInherited;
     }
 
+    function getTrustee() public view returns (address) {
+        return trustee;
+    }
     //////////////////////////////////////////////////////////////////////////////////
     ///////////////////////// BENEFICIARIES LOGIC ////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +257,7 @@ contract InheritanceManager is Trustee {
 
     /**
      * @dev On-Chain payment of underlaying assets.
-     * CAN NOT use ETHER 
+     * CAN NOT use ETHER
      * @param _nftID NFT ID to buy out
      */
     function buyOutEstateNFT(uint256 _nftID) external onlyBeneficiaryWithIsInherited {

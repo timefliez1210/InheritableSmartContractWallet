@@ -22,14 +22,14 @@ contract NFTFactory is ERC721URIStorage {
         _;
     }
 
-    function createEstate(string memory description) external returns (uint256 itemID) {
+    function createEstate(string memory description) external onlyInheritanceManager returns (uint256 itemID) {
         uint256 ID = _incrementCounter();
         _mint(msg.sender, ID);
         _setTokenURI(ID, description);
         return ID;
     }
 
-    function burnEstate(uint256 _id) external {
+    function burnEstate(uint256 _id) external onlyInheritanceManager {
         _burn(_id);
     }
 
