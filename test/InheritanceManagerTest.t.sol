@@ -7,13 +7,12 @@ import {InheritanceManager} from "../src/InheritanceManager.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
 contract InheritanceManagerTest is Test {
-    
     InheritanceManager im;
     ERC20Mock usdc;
     ERC20Mock weth;
 
     address owner = makeAddr("owner");
-    address user1 = makeAddr("user1"); 
+    address user1 = makeAddr("user1");
 
     function setUp() public {
         vm.prank(owner);
@@ -74,7 +73,7 @@ contract InheritanceManagerTest is Test {
         im.sendETH(1e18, owner);
         assertEq(address(im).balance, 10e18);
         vm.stopPrank();
-    } 
+    }
 
     function test_sendEtherFromOwnerDeadlineUpdate() public {
         uint256 deadline = im.getDeadline();

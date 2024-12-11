@@ -2,6 +2,4 @@
 
 pragma solidity 0.8.26;
 
-contract NFTFactory{
-    
-}
+contract NFTFactory {}
