@@ -171,7 +171,7 @@ contract InheritanceManager is Trustee {
      * @dev takes beneciciary address and returns index as a helper function for removeBeneficiary
      * @param _beneficiary address to fetch the index for
      */
-    function _getBeneficiaryIndex(address _beneficiary) internal view returns (uint256 _index) {
+    function _getBeneficiaryIndex(address _beneficiary) public view returns (uint256 _index) {
         for (uint256 i = 0; i < beneficiaries.length; i++) {
             if (_beneficiary == beneficiaries[i]) {
                 _index = i;
@@ -182,6 +182,14 @@ contract InheritanceManager is Trustee {
 
     function getDeadline() public view returns (uint256) {
         return deadline;
+    }
+
+    function getOwner() public view returns(address) {
+        return owner;
+    }
+
+    function getIsInherited() public view returns(bool) {
+        return isInherited;
     }
 
     //////////////////////////////////////////////////////////////////////////////////
@@ -235,7 +243,8 @@ contract InheritanceManager is Trustee {
     }
 
     /**
-     * @dev On-Chain payment of underlaying assets. 
+     * @dev On-Chain payment of underlaying assets.
+     * CAN NOT use ETHER 
      * @param _nftID NFT ID to buy out
      */
     function buyOutEstateNFT(uint256 _nftID) external onlyBeneficiaryWithIsInherited {

@@ -8,7 +8,7 @@
 
 [High] There is no way to unwind DeFi positions from contractInteractions() the original owner might have done in case there is more than one beneficiary (inheritance scenario)
 
-[High] nonReentrant modifier assings ```if(tload(1))``` which is incorrect and renders the modifier useless since it will always return true. Transient storage key has to be checked as ```if(tload(0))```
+[High] nonReentrant modifier assings ```if(tload(1))``` which is incorrect and renders the modifier useless since it will always return false. Transient storage key has to be checked as ```if(tload(0))```
 
 [High] buyOutEstateNFT() uses the wrong divisor while sending the tokens to the recipients
 
@@ -16,3 +16,4 @@
 
 [Medium] The contract lacks functionality to actually receive ether
 
+[Low] assetToPay is assigned globally, it is possible to change the estateValue or assetToPay without the other and on top of that could cause inconsistencies: e.g. the owner minted a house and a car, the house would be set on a value of 2m USD and afterwards the car 5 ETH, the house would need to be bought for 2m ETH.
