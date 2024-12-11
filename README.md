@@ -16,23 +16,19 @@
 
 ## About the Project
 
-About
+Inheriting crypto funds in cold or hot wallets is still an issue until this day, the Inheritance Manager contract implements a time-locked inheritance management system, enabling secure distribution of assets to designated beneficiaries. It uses time-based locks to ensure that assets are only accessible after a specified period. The contract maintains a list of beneficiaries, automating the allocation of inheritance based on predefined conditions. This system offers a trustless and transparent way to manage estate planning, ensuring assets are distributed as intended without the need for intermediaries.
 
-This contract is designed as a modified fund me. It is supposed to sign up participants for a 
-social christmas dinner (or any other dinner), while collecting payments for signing up.
+Inheritance Manager can also be used as a backup for your wallet.
 
-We try to address the following problems in the oraganization of such events:
-
--   **Funding Security**: Organizing a social event is tough, people often say "we will attend" but take forever to pay their share, with our Christmas Dinner Contract we directly "force" the attendees to pay upon signup, so the host can plan properly knowing the total budget after deadline.
--   **Organization**: Through funding security hosts will have a way easier time to arrange the event which fits the given budget. No Backsies.
+For a more in-depth documentation please have a look at the natspec, it is very detailed.
 
 ## Actors
 
 
 Actors:
-- ```Host```: The person doing the organization of the event. Receiver of the funds by the end of ```deadline```. Privilegded Role, which can be handed over to any ```Participant``` by the current ```host```
-- ```Participant```: Attendees of the event which provided some sort of funding. ```Participant``` can become new ```Host```, can continue sending money as Generous Donation, can sign up friends and can become ```Funder```.
-- ```Funder```: Former Participants which left their funds in the contract as donation, but can not attend the event. ```Funder``` can become ```Participant``` again BEFORE deadline ends.
+- ```Owner```: The Owner of the smart contract wallet
+- ```Beneficiary```: Anyone set by the owner to inherit the smart contract and all it's balances.
+- ```Trustee```: Not necessary role, but can be appointed by the beneficiearies in case underlaying estate values of the NFTs need to be reevaluated and/or the payout asset has to be changed.
 
 
 [//]: # (contest-details-close)
@@ -46,8 +42,15 @@ All Contracts in `src` are in scope.
 ```
 ```js
 src/
-├── ChristmasDinner.sol
+├── InheritanceManager.sol
+├── NFTFactory.sol
+├── modules/
+    ├──Trustee.sol
 ```
+
+### Notice:
+All issues related to the NFT part are automatically considered low, EXCEPT the issue would result in a loss of funds. Issues with minting, BaseURI or anything else which DOES NOT result in
+a loss of Ether or any other ERC20 tokens are absolutely not a priority, since the NFT logic is convinience only and relies on off-chain finality anyway.
 
 ## Compatibilities
 
@@ -56,10 +59,7 @@ Compatibilities:
   Blockchains:
       - Ethereum
   Tokens:
-      - ETH  
-      - WETH
-      - WBTC
-      - USDC
+      - No limitations. Inheritance Manager needs to be compatible with ether and every ERC20 token.
 ```
 
 
@@ -96,6 +96,6 @@ $ forge coverage
 
 ## Known Issues
 
-We are aware that we do not require a minimum deposit amount to sign up as participant for this contract. We consider it not necessary and rely here on social conventions.
+None.
 
 [//]: # (known-issues-close)

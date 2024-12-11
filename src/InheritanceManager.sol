@@ -2,11 +2,12 @@
 
 pragma solidity 0.8.26;
 
-import {TrusteeContract} from "./TrusteeContract.sol";
+import {Trustee} from "./modules/Trustee.sol";
+import {NFTFactory} from "./NFTFactory.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract InheritanceManager {
+contract InheritanceManager is Trustee {
     using SafeERC20 for IERC20;
 
     error NotOwner(address);
@@ -15,19 +16,37 @@ contract InheritanceManager {
     error InvalidBeneficiaries();
     error NotYetInherited();
 
+    uint256 public constant TIMELOCK = 90 days;
+    NFTFactory nft;
     address owner;
     address[] beneficiaries;
-    mapping(address target => bytes interaction) interactions;
+    mapping(address protocol => bytes) interactions;
     bool isInherited = false;
     uint256 deadline;
 
     constructor() {
         owner = msg.sender;
+        nft = new NFTFactory(address(this));
     }
 
     modifier onlyOwner() {
         if (msg.sender != owner) {
             revert NotOwner(msg.sender);
+        }
+        _;
+    }
+
+    /**
+     * @dev this while loop will revert on array out of bounds if not
+     * called by a beneficiary.
+     */
+    modifier onlyBeneficiaryWithIsInherited() {
+        uint256 i = 0;
+        while (i < beneficiaries.length + 1) {
+            if (msg.sender == beneficiaries[i] && isInherited) {
+                break;
+            }
+            i++;
         }
         _;
     }
@@ -47,9 +66,9 @@ contract InheritanceManager {
         }
     }
 
-    function getDeadline() public view returns (uint256) {
-        return deadline;
-    }
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////// WALLET FUNCTIONALITY ///////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
 
     /**
      * @dev Sending ERC20 tokens out of the contract. Reentrancy safe, in case we interact with
@@ -90,14 +109,31 @@ contract InheritanceManager {
      */
     function contractInteractions(address _target, bytes calldata _payload, uint256 _value, bool _storeTarget)
         external
-        onlyOwner
         nonReentrant
+        onlyOwner
     {
         (bool success, bytes memory data) = _target.call{value: _value}(_payload);
         require(success, "interaction failed");
         if (_storeTarget) {
             interactions[_target] = data;
         }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////////////////// ADDITIONAL INHERITANCE LOGIC ///////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @dev creates an NFT of an underlaying asset, for example real estate. Mints the nft and adds it 
+     * into nftValue mapping, connecting it to a real world price.
+     * @param _description describes the asset, for example address or title number
+     * @param _value uint256 describing the value of an asset, we recommend using a stablecoin like USDC or DAI
+     * @param _asset the address of the asset in which beneficiaries would need to pay for that asset.
+     */
+    function createEstateNFT(string memory _description, uint256 _value, address _asset) external onlyOwner {
+        uint256 nftID = nft.createEstate(_description);
+        nftValue[nftID] = _value;
+        assetToPay = _asset;
     }
 
     /**
@@ -119,10 +155,43 @@ contract InheritanceManager {
         delete beneficiaries[indexToRemove];
     }
 
+    //////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////// HELPER FUNCTIONS /////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @dev internal helper function to be called at contract creation and every owner controlled event/function call
+     * to resett the timer off inactivity.
+     */
+    function _setDeadline() internal {
+        deadline = block.timestamp + TIMELOCK;
+    }
+
+    /**
+     * @dev takes beneciciary address and returns index as a helper function for removeBeneficiary
+     * @param _beneficiary address to fetch the index for
+     */
+    function _getBeneficiaryIndex(address _beneficiary) internal view returns (uint256 _index) {
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            if (_beneficiary == beneficiaries[i]) {
+                _index = i;
+                break;
+            }
+        }
+    }
+
+    function getDeadline() public view returns (uint256) {
+        return deadline;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////// BENEFICIARIES LOGIC ////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
+
     /**
      * @dev manages the inheritance of this wallet either
      * 1. the owner lost his keys and wants to reclaim this contract from beneficiaries slot0
-     * 2. the owner was inactive more than 90 days and heirs will claim remaining funds.
+     * 2. the owner was inactive more than 90 days and beneficiaries will claim remaining funds.
      */
     function inherit() external {
         if (block.timestamp < getDeadline()) {
@@ -166,23 +235,29 @@ contract InheritanceManager {
     }
 
     /**
-     * @dev internal helper function to be called at contract creation and every owner controlled event/function call
-     * to resett the timer off inactivity.
+     * @dev On-Chain payment of underlaying assets. 
+     * @param _nftID NFT ID to buy out
      */
-    function _setDeadline() internal {
-        deadline = block.timestamp + 90 days;
+    function buyOutEstateNFT(uint256 _nftID) external onlyBeneficiaryWithIsInherited {
+        uint256 value = nftValue[_nftID];
+        uint256 divisor = beneficiaries.length;
+        uint256 multiplier = beneficiaries.length - 1;
+        uint256 finalAmount = (value / divisor) * multiplier;
+        IERC20(assetToPay).safeTransferFrom(msg.sender, address(this), finalAmount);
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            if (msg.sender == beneficiaries[i]) {
+                return;
+            } else {
+                IERC20(assetToPay).safeTransfer(beneficiaries[i], finalAmount / divisor);
+            }
+        }
+        nft.burnEstate(_nftID);
     }
 
     /**
-     * @dev takes beneciciary address and returns index as a helper function for removeBeneficiary
-     * @param _beneficiary address to fetch the index for
+     * @param _trustee address of appointed trustee for asset reevaluation
      */
-    function _getBeneficiaryIndex(address _beneficiary) internal view returns (uint256 _index) {
-        for (uint256 i = 0; i < beneficiaries.length; i++) {
-            if (_beneficiary == beneficiaries[i]) {
-                _index = i;
-                break;
-            }
-        }
+    function appointTrustee(address _trustee) external onlyBeneficiaryWithIsInherited {
+        trustee = _trustee;
     }
 }
